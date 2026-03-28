@@ -1,5 +1,5 @@
 import express from "express";
-import { VertexAI } from "@google-cloud/vertexai";
+import { GoogleGenAI } from "@google/genai";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const vertexAI = new VertexAI({ project: "sobu-lab", location: "us-central1" });
+const ai = new GoogleGenAI({ vertexai: true, project: "sobu-lab", location: "us-central1" });
 
 const EXTRACT_PROMPT = `
 以下のテキストからレシピ情報を抽出し、JSON形式のみで返してください。説明文は不要です。
@@ -32,10 +32,9 @@ const EXTRACT_PROMPT = `
 `;
 
 async function extractWithGemini(text, url) {
-  const model = vertexAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
   const prompt = `URL: ${url}\n\n${EXTRACT_PROMPT}\n\n--- テキスト ---\n${text.slice(0, 8000)}`;
-  const result = await model.generateContent(prompt);
-  const raw = result.response.candidates[0].content.parts[0].text.trim().replace(/^```json\n?/, "").replace(/\n?```$/, "");
+  const result = await ai.models.generateContent({ model: "gemini-2.0-flash-001", contents: prompt });
+  const raw = result.text.trim().replace(/^```json\n?/, "").replace(/\n?```$/, "");
   return JSON.parse(raw);
 }
 
@@ -74,7 +73,6 @@ app.use(express.static(join(__dirname, "dist")));
 app.post("/api/extract", async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: "URLが必要です" });
-  if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY が設定されていません" });
 
   try {
     const isYoutube = /youtube\.com|youtu\.be/.test(url);
