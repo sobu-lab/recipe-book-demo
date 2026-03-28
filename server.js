@@ -56,7 +56,7 @@ async function fetchPageInfo(url) {
 }
 
 async function fetchYoutubeInfo(videoUrl) {
-  const match = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+  const match = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([^&\n?#]+)/);
   const videoId = match ? match[1] : videoUrl;
   const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`;
   const res = await fetch(apiUrl);
