@@ -3,6 +3,12 @@
 URLを貼り付けるだけでAIが自動でレシピを抽出・登録できるWebアプリです。
 レシピはブラウザの **localStorage** に保存されます（端末ごとに個別のデータ）。
 
+## URL
+
+https://recipe-book-demo-qkwxzlu5tq-an.a.run.app
+
+![QR Code](https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://recipe-book-demo-qkwxzlu5tq-an.a.run.app)
+
 ## 機能
 
 - **URLから追加** — レシピサイトやYouTubeのURLを貼るだけでAIが自動抽出
