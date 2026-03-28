@@ -41,3 +41,4 @@ jobs:
           flags: --allow-unauthenticated --port=8080
           env_vars: |
             YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
