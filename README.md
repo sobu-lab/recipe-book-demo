@@ -26,7 +26,7 @@ YouTube URLの場合は動画の概要欄からレシピを抽出します。
 
 ## アーキテクチャ
 
-\`\`\`
+~~~
 ブラウザ (localStorage)
         ↓
 Cloud Run (Express + React)
@@ -35,20 +35,20 @@ YouTube Data API v3（YouTube URLの場合）
 Web fetch（その他のURLの場合）
         ↓
 Gemini 2.5 Flash Lite（レシピ抽出）
-\`\`\`
+~~~
 
 - フロントエンド: React + Vite（データは localStorage）
-- バックエンド: Express（/api/extract のみ・Firestore なし）
+- バックエンド: Express（`/api/extract` のみ・Firestore なし）
 - AI: Google Gemini 2.5 Flash Lite
-- デプロイ: GitHub Actions → Artifact Registry → Cloud Run（main ブランチへの push で自動）
+- デプロイ: GitHub Actions → Artifact Registry → Cloud Run（`main` ブランチへの push で自動）
 
 ## 開発
 
-\`\`\`bash
+~~~bash
 npm install
 npm run dev    # ローカル起動
 npm run build  # ビルド
-\`\`\`
+~~~
 
 ## 自分用にデプロイする手順
 
@@ -63,54 +63,56 @@ GitHub でこのリポジトリを **Fork** します。
 
 ### 2. GCP プロジェクトを作成
 
-\`\`\`bash
+~~~bash
 gcloud projects create PROJECT_ID
 gcloud config set project PROJECT_ID
-\`\`\`
+~~~
 
 請求先アカウントを [Cloud Console](https://console.cloud.google.com/billing) で紐付けてください（Gemini API の利用に必要）。
 意図しない課金を防ぐため [予算アラート](https://console.cloud.google.com/billing/budgets) で上限設定を推奨します。
 
 ### 3. API を有効化
 
-\`\`\`bash
+~~~bash
 gcloud services enable \
   run.googleapis.com \
   artifactregistry.googleapis.com \
   youtube.googleapis.com \
   iam.googleapis.com \
   iamcredentials.googleapis.com
-\`\`\`
+~~~
 
 ### 4. Artifact Registry リポジトリを作成
 
-\`\`\`bash
+~~~bash
 gcloud artifacts repositories create cloud-run-images \
   --repository-format=docker \
   --location=asia-northeast1
-\`\`\`
+~~~
 
 ### 5. API キーを取得
 
 **Gemini API キー**
-\`\`\`bash
+
+~~~bash
 gcloud alpha services api-keys create \
   --display-name="Gemini API Key" \
   --api-target=service=generativelanguage.googleapis.com
 # 出力の keyString をメモする
-\`\`\`
+~~~
 
 **YouTube Data API キー**
-\`\`\`bash
+
+~~~bash
 gcloud alpha services api-keys create \
   --display-name="YouTube Data API Key" \
   --api-target=service=youtube.googleapis.com
 # 出力の keyString をメモする
-\`\`\`
+~~~
 
 ### 6. Workload Identity Federation を設定
 
-\`\`\`bash
+~~~bash
 PROJECT_ID=$(gcloud config get-value project)
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
 GITHUB_USER=あなたのGitHubユーザー名
@@ -150,15 +152,16 @@ gcloud iam service-accounts add-iam-policy-binding \
   github-actions-sa@${PROJECT_ID}.iam.gserviceaccount.com \
   --role=roles/iam.workloadIdentityUser \
   --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github-pool/attribute.repository/${GITHUB_USER}/${REPO_NAME}"
-\`\`\`
+~~~
 
 Provider のリソース名を確認：
-\`\`\`bash
+
+~~~bash
 gcloud iam workload-identity-pools providers describe github-provider \
   --location=global \
   --workload-identity-pool=github-pool \
   --format='value(name)'
-\`\`\`
+~~~
 
 ### 7. GitHub Secrets を設定
 
@@ -175,26 +178,27 @@ gcloud iam workload-identity-pools providers describe github-provider \
 
 `.github/workflows/deploy.yml` の PROJECT_ID を書き換えます：
 
-\`\`\`yaml
+~~~yaml
 env:
   PROJECT_ID: PROJECT_ID   # 手順2で決めたプロジェクトID
   REGION: asia-northeast1
   IMAGE: asia-northeast1-docker.pkg.dev/PROJECT_ID/cloud-run-images/recipe-book-demo
-\`\`\`
+~~~
 
 ### 9. デプロイ
 
 `main` ブランチに push すると自動デプロイされます：
 
-\`\`\`bash
+~~~bash
 git add .
 git commit -m "Set up my instance"
 git push origin main
-\`\`\`
+~~~
 
 デプロイ後の URL を確認：
-\`\`\`bash
+
+~~~bash
 gcloud run services describe recipe-book-demo \
   --region=asia-northeast1 \
   --format='value(status.url)'
-\`\`\`
+~~~
