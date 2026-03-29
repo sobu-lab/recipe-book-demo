@@ -142,6 +142,63 @@ function RecipeCard({ recipe, onClick }) {
   );
 }
 
+// ── Nutrition ─────────────────────────────────────────────────────────
+function NutritionPanel({ recipe }) {
+  const [nutrition, setNutrition] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const fetch_ = async () => {
+    setLoading(true); setErr(""); setNutrition(null);
+    try {
+      const r = await fetch("/api/nutrition", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: recipe.title, servings: recipe.servings, ingredients: recipe.ingredients }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "取得に失敗しました");
+      setNutrition(data);
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ fontFamily: font, fontSize: 15, fontWeight: 700, color: P.accent, borderBottom: `2px solid ${P.accentLight}`, paddingBottom: 4, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span>栄養成分（AI推定）</span>
+        <Btn onClick={fetch_} label={loading ? "推定中..." : "🔬 推定する"} secondary small disabled={loading} />
+      </div>
+      {err && <div style={{ color: "#B91C1C", fontSize: 12 }}>{err}</div>}
+      {nutrition && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
+            {[
+              { label: "カロリー", value: nutrition.calories, unit: "kcal" },
+              { label: "たんぱく質", value: nutrition.protein, unit: "g" },
+              { label: "脂質", value: nutrition.fat, unit: "g" },
+              { label: "炭水化物", value: nutrition.carbs, unit: "g" },
+            ].map(({ label, value, unit }) => (
+              <div key={label} style={{ background: P.accentLight, borderRadius: 10, padding: "10px 6px", textAlign: "center" }}>
+                <div style={{ fontFamily: fs, fontSize: 10, color: P.textSub, marginBottom: 2 }}>{label}</div>
+                <div style={{ fontFamily: font, fontSize: 18, fontWeight: 700, color: P.accent }}>{value}</div>
+                <div style={{ fontFamily: fs, fontSize: 10, color: P.textSub }}>{unit}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: P.textSub, lineHeight: 1.5 }}>1人前あたりの推定値。{nutrition.note}</div>
+        </>
+      )}
+      {!nutrition && !loading && !err && (
+        <div style={{ fontSize: 13, color: P.textSub }}>ボタンを押すと材料からAIが栄養成分を推定します。</div>
+      )}
+    </div>
+  );
+}
+
 // ── Detail ────────────────────────────────────────────────────────────
 function RecipeDetail({ recipe, onBack, onEdit, onDelete }) {
   return (
@@ -180,6 +237,7 @@ function RecipeDetail({ recipe, onBack, onEdit, onDelete }) {
         ))}
       </Section>
       {recipe.memo && <Section title="メモ"><div style={{ fontSize: 14, color: P.textSub, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{recipe.memo}</div></Section>}
+      <NutritionPanel recipe={recipe} />
     </div>
   );
 }

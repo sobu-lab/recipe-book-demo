@@ -71,6 +71,47 @@ async function fetchYoutubeInfo(videoUrl) {
 app.use(express.json());
 app.use(express.static(join(__dirname, "dist")));
 
+// POST estimate nutrition
+app.post("/api/nutrition", async (req, res) => {
+  const { title, servings, ingredients } = req.body;
+  if (!ingredients?.length) return res.status(400).json({ error: "材料が必要です" });
+  if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY が設定されていません" });
+
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  const ingredientText = ingredients.map((i) => `${i.amount || ""}${i.unit || ""} ${i.name}`).join("\n");
+  const prompt = `以下のレシピの栄養成分を推定し、JSON形式のみで返してください。説明文は不要です。
+
+料理名: ${title || "不明"}
+分量: ${servings || "不明"}
+
+材料:
+${ingredientText}
+
+出力形式（1人前あたりの推定値）:
+{
+  "calories": 350,
+  "protein": 25,
+  "fat": 12,
+  "carbs": 30,
+  "note": "推定の根拠や注意事項（任意）"
+}
+
+ルール:
+- 数値はすべて整数
+- 単位: calories=kcal, protein/fat/carbs=g
+- 分量の記載がある場合はその人数で割った1人前の値
+- JSON以外のテキストは一切出力しない`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text().trim().replace(/^```json\n?/, "").replace(/\n?```$/, "");
+    res.json(JSON.parse(raw));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // POST extract recipe from URL
 app.post("/api/extract", async (req, res) => {
   const { url } = req.body;
