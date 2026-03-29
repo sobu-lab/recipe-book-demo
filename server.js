@@ -10,7 +10,7 @@ const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const EXTRACT_PROMPT = `
-以下のテキストからレシピ情報を抽出し、JSON形式のみで返してください。説明文は不要です。
+以下のテキストからレシピ情報を抽出し、同時に材料から栄養成分を推定して、JSON形式のみで返してください。説明文は不要です。
 
 出力形式:
 {
@@ -21,12 +21,20 @@ const EXTRACT_PROMPT = `
     { "amount": "大さじ2", "name": "醤油" }
   ],
   "steps": ["手順1", "手順2"],
-  "memo": "コツやポイント"
+  "memo": "コツやポイント",
+  "nutrition": {
+    "calories": 350,
+    "protein": 25,
+    "fat": 12,
+    "carbs": 30,
+    "note": "推定の根拠や注意事項（任意）"
+  }
 }
 
 ルール:
 - amountは元の表記をそのまま使う
 - stepsは番号なしの文字列配列
+- nutritionは1人前あたりの推定値（数値はすべて整数、calories=kcal、protein/fat/carbs=g）
 - レシピが見つからない場合は { "error": "レシピが見つかりませんでした" } を返す
 - JSON以外のテキストは一切出力しない
 `;
@@ -34,7 +42,7 @@ const EXTRACT_PROMPT = `
 async function extractWithGemini(text, url) {
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-  const prompt = `URL: ${url}\n\n${EXTRACT_PROMPT}\n\n--- テキスト ---\n${text.slice(0, 8000)}`;
+  const prompt = `URL: ${url}\n\n${EXTRACT_PROMPT}\n\n--- テキスト ---\n${text.slice(0, 3000)}`;
   const result = await model.generateContent(prompt);
   const raw = result.response.text().trim().replace(/^```json\n?/, "").replace(/\n?```$/, "");
   return JSON.parse(raw);

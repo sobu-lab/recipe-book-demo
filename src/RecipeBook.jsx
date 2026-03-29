@@ -144,7 +144,7 @@ function RecipeCard({ recipe, onClick }) {
 
 // ── Nutrition ─────────────────────────────────────────────────────────
 function NutritionPanel({ recipe }) {
-  const [nutrition, setNutrition] = useState(null);
+  const [nutrition, setNutrition] = useState(recipe.nutrition || null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
@@ -170,7 +170,7 @@ function NutritionPanel({ recipe }) {
     <div style={{ marginBottom: 20 }}>
       <div style={{ fontFamily: font, fontSize: 15, fontWeight: 700, color: P.accent, borderBottom: `2px solid ${P.accentLight}`, paddingBottom: 4, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span>栄養成分（AI推定）</span>
-        <Btn onClick={fetch_} label={loading ? "推定中..." : "🔬 推定する"} secondary small disabled={loading} />
+        <Btn onClick={fetch_} label={loading ? "推定中..." : "🔄 再推定"} secondary small disabled={loading} />
       </div>
       {err && <div style={{ color: "#B91C1C", fontSize: 12 }}>{err}</div>}
       {nutrition && (
@@ -193,7 +193,7 @@ function NutritionPanel({ recipe }) {
         </>
       )}
       {!nutrition && !loading && !err && (
-        <div style={{ fontSize: 13, color: P.textSub }}>ボタンを押すと材料からAIが栄養成分を推定します。</div>
+        <div style={{ fontSize: 13, color: P.textSub }}>「再推定」ボタンで材料からAIが栄養成分を推定します。</div>
       )}
     </div>
   );
@@ -302,6 +302,7 @@ function normalizeRecipe(r) {
     ),
     steps: (r.steps || []).map(String),
     memo: r.memo || "",
+    nutrition: r.nutrition || null,
     createdAt: r.createdAt || new Date().toISOString(),
   };
 }
