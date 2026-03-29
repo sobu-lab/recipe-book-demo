@@ -114,6 +114,49 @@ function Header({ onAdd, onExtract, count, loading }) {
   );
 }
 
+function ImportExport({ recipes, onImport }) {
+  const ref = useState(() => document.createElement("input"))[0];
+
+  const handleExport = () => {
+    const blob = new Blob([JSON.stringify(recipes, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `recipes_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+  };
+
+  const handleImport = () => {
+    ref.type = "file";
+    ref.accept = ".json";
+    ref.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (!Array.isArray(data)) throw new Error();
+          onImport(data);
+        } catch {
+          alert("読み込めませんでした。エクスポートしたJSONファイルを選択してください。");
+        }
+        ref.value = "";
+      };
+      reader.readAsText(file);
+    };
+    ref.click();
+  };
+
+  const linkStyle = { fontSize: 11, color: P.textSub, cursor: "pointer", textDecoration: "underline", background: "none", border: "none", fontFamily: fs, padding: 0 };
+  return (
+    <div style={{ textAlign: "center", marginBottom: 8 }}>
+      <button style={linkStyle} onClick={handleExport}>エクスポート</button>
+      <span style={{ fontSize: 11, color: P.border, margin: "0 6px" }}>|</span>
+      <button style={linkStyle} onClick={handleImport}>インポート</button>
+    </div>
+  );
+}
+
 function SearchBar({ value, onChange }) {
   return (
     <div style={{ padding: "0 16px", marginBottom: 12 }}>
@@ -372,6 +415,12 @@ export default function RecipeBook() {
             onAdd={() => { setSelected(null); setView("add"); }}
             onExtract={() => setShowExtract(true)}
           />
+          <ImportExport recipes={recipes} onImport={(data) => {
+            const merged = [...data.filter((d) => d.id && !recipes.find((r) => r.id === d.id)), ...recipes];
+            lsSave(merged);
+            setRecipes(merged);
+            showToast(`✓ ${data.length}件をインポートしました`);
+          }} />
           <SearchBar value={search} onChange={setSearch} />
           <div style={{ padding: "0 16px 32px" }}>
             {!loading && filtered.length === 0 && (
