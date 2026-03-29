@@ -41,7 +41,7 @@ const EXTRACT_PROMPT = `
 
 async function extractWithGemini(text, url) {
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
   const prompt = `URL: ${url}\n\n${EXTRACT_PROMPT}\n\n--- テキスト ---\n${text.slice(0, 3000)}`;
   const result = await model.generateContent(prompt);
   const raw = result.response.text().trim().replace(/^```json\n?/, "").replace(/\n?```$/, "");
@@ -86,7 +86,7 @@ app.post("/api/nutrition", async (req, res) => {
   if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY が設定されていません" });
 
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
   const ingredientText = ingredients.map((i) => `${i.amount || ""}${i.unit || ""} ${i.name}`).join("\n");
   const prompt = `以下のレシピの栄養成分を推定し、JSON形式のみで返してください。説明文は不要です。
 
