@@ -143,7 +143,7 @@ function RecipeCard({ recipe, onClick }) {
 }
 
 // ── Nutrition ─────────────────────────────────────────────────────────
-function NutritionPanel({ recipe }) {
+function NutritionPanel({ recipe, onUpdate }) {
   const [nutrition, setNutrition] = useState(recipe.nutrition || null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -159,6 +159,7 @@ function NutritionPanel({ recipe }) {
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "取得に失敗しました");
       setNutrition(data);
+      onUpdate(data);
     } catch (e) {
       setErr(e.message);
     } finally {
@@ -200,7 +201,7 @@ function NutritionPanel({ recipe }) {
 }
 
 // ── Detail ────────────────────────────────────────────────────────────
-function RecipeDetail({ recipe, onBack, onEdit, onDelete }) {
+function RecipeDetail({ recipe, onBack, onEdit, onDelete, onNutritionUpdate }) {
   return (
     <div style={{ padding: 16, fontFamily: fs }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
@@ -237,7 +238,7 @@ function RecipeDetail({ recipe, onBack, onEdit, onDelete }) {
         ))}
       </Section>
       {recipe.memo && <Section title="メモ"><div style={{ fontSize: 14, color: P.textSub, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{recipe.memo}</div></Section>}
-      <NutritionPanel recipe={recipe} />
+      <NutritionPanel recipe={recipe} onUpdate={onNutritionUpdate} />
     </div>
   );
 }
@@ -383,7 +384,15 @@ export default function RecipeBook() {
         </>
       )}
       {view === "detail" && selected && (
-        <RecipeDetail recipe={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} onDelete={() => handleDelete(selected.id)} />
+        <RecipeDetail recipe={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} onDelete={() => handleDelete(selected.id)}
+          onNutritionUpdate={(nutrition) => {
+            const updated = { ...selected, nutrition };
+            const next = lsGet().map((r) => (r.id === selected.id ? updated : r));
+            lsSave(next);
+            setRecipes(next);
+            setSelected(updated);
+          }}
+        />
       )}
       {(view === "edit" || view === "add") && (
         <RecipeForm initial={view === "edit" ? selected : (view === "add" && selected?.title ? selected : null)} onSave={handleSave} onCancel={() => { setSelected(null); setView("list"); }} saving={saving} />
